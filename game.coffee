@@ -4,6 +4,8 @@
 # score; 3 seconds per letter
 ###
 
+getRefURL = (letter) -> "http://unixhelp.ed.ac.uk/alphabetical/m#{letter}.html"
+
 # Configs
 CMD_SCORE = 100
 LETTER_TIME = 5
@@ -21,21 +23,38 @@ _score = 0
 _currentLetter = 0
 _timerInterval = null
 _timerTimeout = null
+_missingLetters = []
 
 FinishGame = () ->
     rank = _score / CMD_SCORE * 25
     rank = parseInt rank * 10
-    instruction.innerHTML = "You score is #{_score}. #{window.ranking[rank]}"
+
+    finalComment = "You score is #{_score}. <br><br>"
+
+    if _missingLetters.length == 0
+        finalComment += "You got everything!"
+    else
+        letters = ""
+        for letter, ind in _missingLetters
+            letters += "<a target='_blank' href='#{getRefURL(letter)}'> #{letter}</a> " if letter
+        letters = letters[0..-2]
+        finalComment += "You missed #{letters}."
+
+    instruction.innerHTML = finalComment
     inputBox.setAttribute "class", "hide"
     score.setAttribute "class", "hide"
     timer.setAttribute "class", "hide"
-    
+
 ValidationCheck = () ->
-    debugger
     inputs = inputBox.value.split ","
+    success = false
+
     for input, ind in inputs
-        if window.allCmd[input]
+        if window.allCmd[input.toLowerCase()]
             _score += CMD_SCORE
+            success = true
+    if not success
+        _missingLetters.push window.aToZ[_currentLetter-1]
     inputBox.value = ""
 
 SetTimer = () ->
@@ -76,6 +95,7 @@ StartGame = () ->
     inputBox.addEventListener "keydown", (e) ->
         if e.keyCode == 13
             clearTimeout _timerTimeout
+            clearInterval _timerInterval
             MoveToNextLetter()
 
     MoveToNextLetter()

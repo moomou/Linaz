@@ -7,9 +7,13 @@
 */
 
 (function() {
-  var CMD_SCORE, FinishGame, LETTER_TIME, MAX_SCORE, MoveToNextLetter, SetTimer, StartGame, ValidationCheck, inputBox, instruction, score, startBtn, timer, _currentLetter, _score, _timerInterval, _timerTimeout;
+  var CMD_SCORE, FinishGame, LETTER_TIME, MAX_SCORE, MoveToNextLetter, SetTimer, StartGame, ValidationCheck, getRefURL, inputBox, instruction, score, startBtn, timer, _currentLetter, _missingLetters, _score, _timerInterval, _timerTimeout;
 
 
+
+  getRefURL = function(letter) {
+    return "http://unixhelp.ed.ac.uk/alphabetical/m" + letter + ".html";
+  };
 
   CMD_SCORE = 100;
 
@@ -35,25 +39,45 @@
 
   _timerTimeout = null;
 
+  _missingLetters = [];
+
   FinishGame = function() {
-    var rank;
+    var finalComment, ind, letter, letters, rank, _i, _len;
     rank = _score / CMD_SCORE * 25;
     rank = parseInt(rank * 10);
-    instruction.innerHTML = "You score is " + _score + ". " + window.ranking[rank];
+    finalComment = "You score is " + _score + ". <br><br>";
+    if (_missingLetters.length === 0) {
+      finalComment += "You got everything!";
+    } else {
+      letters = "";
+      for (ind = _i = 0, _len = _missingLetters.length; _i < _len; ind = ++_i) {
+        letter = _missingLetters[ind];
+        if (letter) {
+          letters += "<a target='_blank' href='" + (getRefURL(letter)) + "'> " + letter + "</a> ";
+        }
+      }
+      letters = letters.slice(0, -1);
+      finalComment += "You missed " + letters + ".";
+    }
+    instruction.innerHTML = finalComment;
     inputBox.setAttribute("class", "hide");
     score.setAttribute("class", "hide");
     return timer.setAttribute("class", "hide");
   };
 
   ValidationCheck = function() {
-    debugger;
-    var ind, input, inputs, _i, _len;
+    var ind, input, inputs, success, _i, _len;
     inputs = inputBox.value.split(",");
+    success = false;
     for (ind = _i = 0, _len = inputs.length; _i < _len; ind = ++_i) {
       input = inputs[ind];
-      if (window.allCmd[input]) {
+      if (window.allCmd[input.toLowerCase()]) {
         _score += CMD_SCORE;
+        success = true;
       }
+    }
+    if (!success) {
+      _missingLetters.push(window.aToZ[_currentLetter - 1]);
     }
     return inputBox.value = "";
   };
@@ -94,6 +118,7 @@
     inputBox.addEventListener("keydown", function(e) {
       if (e.keyCode === 13) {
         clearTimeout(_timerTimeout);
+        clearInterval(_timerInterval);
         return MoveToNextLetter();
       }
     });
